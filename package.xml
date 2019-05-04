@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="2">
+  
+  <name>simon_says</name>
+  <version>1.2.0</version>
+  
+  <description>
+    Spring project at Northwestern University MS Robotics program
+  </description>
+  <license>BSD</license>
+  
+  <author>Feiyu Chen</author>
+  <maintainer email="feiyuchen2019@u.northwestern.edu">Feiyu Chen</maintainer>
+  
+  <url type="repository">https://github.com/felixchenfy/SpringProject_turtlebot_navigation</url>
+  
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>rospy</depend>
+  <depend>roscpp</depend>
+  <depend>geometry_msgs</depend>
+
+</package>
