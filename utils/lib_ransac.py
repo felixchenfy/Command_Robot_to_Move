@@ -31,7 +31,7 @@ def ransac(
     t0 = time.time()
     iter = 0
     best_weights = None
-    best_err = np.inf
+    best_err, best_num_pts = np.inf, 0
     best_inlier_idxs = None
     for iter in range(max_iter):
         
@@ -39,8 +39,13 @@ def ransac(
 
         # Get may_be data, and fit may_be model
         maybe_idxs, test_idxs = random_partition(n_pts_base, P)
+        maybe_data = data[maybe_idxs,:]
+        maybe_weights = model.fit(maybe_data)
+
+        # Remove bad data in may_be data
+        maybe_err = model.get_error(maybe_data, maybe_weights)
+        maybe_idxs = maybe_idxs[maybe_err < dist_thre] # select indices of rows with accepted points
         maybe_inliers = data[maybe_idxs,:]
-        maybe_weights = model.fit(maybe_inliers)
 
         # Evaluate on test data
         test_points = data[test_idxs]
@@ -56,13 +61,29 @@ def ransac(
             
         # Fit again
         if len(also_inliers) > n_pts_extra:
-            better_data = np.concatenate( (maybe_inliers, also_inliers) )
+            better_idxs = np.concatenate( (maybe_idxs, also_idxs) )
+            better_data = data[better_idxs, :]
             better_weights = model.fit(better_data)
-            better_errors = model.get_error(better_data, better_weights)
-            curr_error = np.mean( better_errors )
-            if curr_error < best_err:
-                best_weights, best_err = better_weights, curr_error
-                best_inlier_idxs = np.concatenate( (maybe_idxs, also_idxs) )
+
+            # Remove bad data in may_be data
+            better_err = model.get_error(better_data, better_weights)
+            better_idxs = better_idxs[better_err < dist_thre] # select indices of rows with accepted points
+            better_inliers = data[better_idxs,:]
+            better_err = better_err[better_err < dist_thre]
+
+            # criterias
+            better_err_mean = np.mean(better_err)
+            better_num_pts = sum(better_err < dist_thre)
+
+            # Check criteria
+            #criteria = better_err_mean < best_err
+            criteria = best_num_pts < better_num_pts
+
+            if criteria:
+                best_weights = better_weights
+                best_err = better_err_mean
+                best_num_pts = better_num_pts
+                best_inlier_idxs = better_idxs
         iter+=1
 
         # Output

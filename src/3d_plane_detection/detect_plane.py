@@ -17,7 +17,7 @@ if 1: # my lib
     import os
     ROOT = os.path.dirname(os.path.abspath(__file__))+"/../../"
     sys.path.append(ROOT)
-    from utils.lib_cloud import read_color_and_depth_image, rgbd2cloud, getCloudContents, formNewCloud
+    from utils.lib_cloud import read_color_and_depth_image, rgbd2cloud, getCloudContents, formNewCloud, filtCloudByRange
     from utils.lib_ransac import ransac
     from utils.lib_plane import fit_plane_by_PCA, abc_to_w, create_plane
 
@@ -85,10 +85,11 @@ if __name__=="__main__":
     # -- Get point cloud
     cloud = rgbd2cloud(color_img, depth_img, camera_intrinsic, input_img_format="open3d")
     cloud = open3d.geometry.voxel_down_sample(cloud, voxel_size=0.02)
+    cloud = filtCloudByRange(cloud, zmax=0.8)
     xyz, color = getCloudContents(cloud)
 
     # Draw whole cloud
-    if 0:
+    if 1:
         open3d.draw_geometries([cloud])
 
     # segment plane
@@ -107,7 +108,7 @@ if __name__=="__main__":
             n_pts_base=20,
             n_pts_extra=40,
             max_iter=10,
-            dist_thre=0.02,
+            dist_thre=0.01,
             print_time=True,
             debug=False,
         )
