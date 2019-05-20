@@ -1,0 +1,16 @@
+
+*.pyc
+*.vscode
+**/.vscode
+*.docx 
+*.odt
+*.pdf 
+*.gv
+
+doc/copied
+data/*
+build/*
+log/*
+
+src/train_yolo
+tmp*.py

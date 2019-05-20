@@ -1,0 +1,29 @@
+<launch>
+
+    <!-- This is for launching Realsense camera:
+
+    $ roslaunch realsense2_camera rs_camera.launch filters:=pointcloud align_depth:=true
+
+    $ roslaunch realsense2_camera rs_camera.launch
+
+    $ roslaunch realsense2_camera rs_camera.launch filters:=colorizer align_depth:=true
+
+    $ roslaunch realsense2_camera rs_camera.launch align_depth:=true
+
+    * If using filters:=pointcloud, depth image will be filled with colored. So don't use it.
+    I haven't figure out generating both (1) point cloud and (2) non-colored depth image.
+    
+    -->
+
+    <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+        <arg name="align_depth" default="true" />
+    </include>
+
+    <!-- <include file="$(find realsense2_camera)/launch/rs_camera.launch">
+        <arg name="filters" default="pointcloud" />
+    </include> -->
+
+    <node type="rviz" name="rviz_depth_image" pkg="rviz"
+       args="-d $(find simon_says)/config/rviz_debug_depth_cam.rviz" respawn="true"/> 
+
+</launch>

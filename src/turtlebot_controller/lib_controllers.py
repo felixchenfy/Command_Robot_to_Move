@@ -1,7 +1,16 @@
 
 import rospy
 import math
-from geo_trans import *
+
+if 1: # my lib
+    import sys
+    import os
+    ROOT = os.path.dirname(os.path.abspath(__file__))+"/../../"
+    sys.path.append(ROOT)
+    from utils.lib_geo_trans_ros import *
+    
+# ==================================================================================================
+
 
 class PIDcontroller(object):
     T = 1
@@ -40,18 +49,23 @@ def control_wheeled_robot_to_pose(
     turtle, x_goal, y_goal, theta_goal=None):
     # Reference: page 129 in "Robotics, Vision, and Control"
 
-    # Set parameters
-    T = 0.1  # control period
+    # Robot config
+    MAX_V = 0.1
+    MAX_W = 0.6
+
+    # Set control parameters
+    T = 0.05  # control period
     PIDcontroller.set_control_period(T)
  
-    k_rho = 0.5 # reduce distance to the goal. P > 0
+    k_rho = 0.3 # reduce distance to the goal. P > 0
     k_alpha = 1.0 # drive robot towards the goal. P > P_rho
     if theta_goal is None: 
         theta_goal = 0
         k_beta = 0 # not considering orientation
     else:
-        k_beta = -0.3 # make robot same orientation as desired. P < 0
-    
+        k_beta = -0.5 # make robot same orientation as desired. P < 0
+                # 100% is too large
+                    
     # Init PID controllers
     pid_rho = PIDcontroller(P=k_rho, I=0)
     pid_alpha = PIDcontroller(P=k_alpha, I=0)
@@ -64,7 +78,9 @@ def control_wheeled_robot_to_pose(
 
         rho = calc_dist(x, y, x_goal, y_goal)
         alpha = pi2pi(math.atan2(y_goal - y, x_goal - x) - theta)
-        beta = - theta - alpha
+        beta = - theta - alpha + theta_goal
+
+        print("rho = {}, alpha = {}, beta = {}".format(rho, alpha, beta))
 
         # check direction
         sign = 1
@@ -83,15 +99,18 @@ def control_wheeled_robot_to_pose(
         w = sign * (val_alpha + val_beta)
 
         # Threshold on velocity
-        v = min(abs(v), 0.3) * (1 if v > 0 else -1)  # limit v
-        # w = min(abs(w), 0.5) * (1 if w>0 else -1) # limit w
+        v = min(abs(v), MAX_V) * (1 if v > 0 else -1)  # limit v
+        w = min(abs(w), MAX_W) * (1 if w > 0 else -1) # limit w
         
         # Output
         turtle.set_twist(v, w)
-
-        print("\n")
         turtle.print_state(x, y, theta, v, w)
 
         rospy.sleep(T)
 
+        # Check stop condition
+        if abs(x-x_goal)<0.008 and abs(y-y_goal)<0.008 and abs(theta-theta_goal)<0.1:
+            break
+
     turtle.set_twist(v=0, w=0)
+    print("Reach the target. Control completes.\n")

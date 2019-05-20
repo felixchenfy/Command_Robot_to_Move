@@ -1,0 +1,6 @@
+<launch>
+
+    <node type="rviz" name="rviz_depth_image" pkg="rviz"
+       args="-d $(find simon_says)/config/rviz_debug_depth_cam.rviz" respawn="true"/> 
+
+</launch>
