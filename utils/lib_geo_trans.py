@@ -1,12 +1,11 @@
 
 '''
-    Geometric and camera related transformations
+Geometric and camera related transformations
 '''
 
 import numpy as np
 import copy
 import cv2
-# ---------------- Basic trans
 
 
 def form_T(R, p):
@@ -28,15 +27,14 @@ def invRp(R, p):
     R_inv, p_inv = get_Rp_from_T(T)
     return R_inv, p_inv
 
+
 def transXYZ(x=None, y=None, z=None):
-    T=np.identity(4)
-    data=[x, y, z]
+    T = np.identity(4)
+    data = [x, y, z]
     for i in range(3):
         if data[i] is not None:
-            T[i, 3]=data[i]
+            T[i, 3] = data[i]
     return T
-    
-# ---------------- Euler angles
 
 
 def rot3x3_to_4x4(R):
@@ -44,21 +42,26 @@ def rot3x3_to_4x4(R):
     T[0:3, 0:3] = R
     return T
 
-def rot(axis, angle, matrix_len=3):
+
+def rot(axis, angle, matrix_len=4):
     R_vec = np.array(axis).astype(float)*angle
     R, _ = cv2.Rodrigues(R_vec)
     if matrix_len == 4:
         R = rot3x3_to_4x4(R)
     return R
 
-def rotx(angle, matrix_len=3):
-    return rot([1,0,0], angle, matrix_len)
 
-def roty(angle, matrix_len=3):
-    return rot([0,1,0], angle, matrix_len)
+def rotx(angle, matrix_len=4):
+    return rot([1, 0, 0], angle, matrix_len)
 
-def rotz(angle, matrix_len=3):
-    return rot([0,0,1], angle, matrix_len)
+
+def roty(angle, matrix_len=4):
+    return rot([0, 1, 0], angle, matrix_len)
+
+
+def rotz(angle, matrix_len=4):
+    return rot([0, 0, 1], angle, matrix_len)
+
 
 def euler2matrix(x, y, z, order='rxyz'):
     return rotx(x).dot(roty(y)).dot(rotz(z))
@@ -87,11 +90,11 @@ def distortPoint(x, y, distortion_coeffs):
 
 def world2cam(p, T_cam_to_world):
     if type(p) == list:
-        p = np.array(p).reshape((len(p), 1))
+        p = np.array(p)
     if p.shape[0] == 3:
-        p = np.vstack((p, 1))
+        p = np.vstack((p, np.ones((1, p.shape[1]))))
     p_cam = T_cam_to_world.dot(p)
-    return p_cam[0:3, 0:1]
+    return p_cam[0:3, :]
 
 # Project a point represented in camera coordinate onto the image plane
 
@@ -99,26 +102,57 @@ def world2cam(p, T_cam_to_world):
 def cam2pixel(p, camera_intrinsics, distortion_coeffs=None):
 
     # Transform to camera normalized plane (z=1)
-    p = p/p[2, 0]  # z=1
+    p = p/p[2, :]  # z=1
 
     # Distort point
     if distortion_coeffs is not None:
-        p = distortPoint(p[0, 0], p[1, 0], distortion_coeffs)
+        for i in range(p.shape[1]):
+            p[0:2, i] = distortPoint(p[0, i], p[1, i], distortion_coeffs)
+            assert 0, "TODO: I haven't tested this for loop"
 
     # Project to image plane
     pt_pixel_distort = camera_intrinsics.dot(p)
-    return pt_pixel_distort[0:2, 0]
+    return pt_pixel_distort[0:2, :]
 
 # A combination of the above two
 
 
-def world2pixel(p, T_cam_to_world, camera_intrinsics, distortion_coeffs):
+def world2pixel(p, T_cam_to_world, camera_intrinsics, distortion_coeffs=None):
     return cam2pixel(world2cam(p, T_cam_to_world), camera_intrinsics, distortion_coeffs)
 
+# -------------------------------- 3D - 2D conversion --------------------------------
+def project_points_to_image_mask(xyz, open3d_camera_intrinsic, scale=5.0):
+    if xyz.shape[0] != 3:
+        xyz = xyz.T
+    
+    # set image size
+    intrinsics = open3d_camera_intrinsic
+    w, h = intrinsics.width, intrinsics.height
+    ws, hs = int(w/scale), int(h/scale)
+
+    # get projected points on image
+
+    vu_s = cam2pixel(xyz, intrinsics.intrinsic_matrix)
+    vu_s /= scale
+    vu_s = np.round(vu_s).astype(np.int)
+    w_idx = np.logical_and(ws > vu_s[0], vu_s[0] >= 0)
+    h_idx = np.logical_and(hs > vu_s[0], vu_s[1] >= 0)
+    vu_s = vu_s[:, np.logical_and(w_idx, h_idx)]
+
+    # put points onto mask
+    mask = np.zeros((hs, ws), np.int8)
+    mask[vu_s[1], vu_s[0]] = 1
+    
+    # scale back
+    vu_s = vu_s * scale
+    mask = cv2.resize(mask.astype(np.float), (w, h))
+    mask = mask > 0.5
+    return mask, vu_s
 
 # ---------------------- Test -----------------------
 if __name__ == "__main__":
 
     R = euler2matrix(np.pi/2, 0, 0)
-    # R = rotz(np.pi/2)
+    R = rotz(np.pi/2)
     # R = rotx(np.pi/2)
+    print(R)

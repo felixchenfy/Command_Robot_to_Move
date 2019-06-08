@@ -26,7 +26,8 @@ if 1:  # my lib
     from utils.lib_geo_trans_ros import *
     from utils.lib_cloud import *
     from utils.lib_ros_topic import ColorImageSubscriber, DepthImageSubscriber
-
+    from config.config import set_args
+    
 # ==================================================================================================
 
 def get_time():
@@ -50,19 +51,21 @@ if __name__ == '__main__':
     node_name = 'read_image_from_realsense'
     rospy.init_node(node_name)
 
-    TOPIC_COLOR_IMAGE = "/camera/color/image_raw"
-    TOPIC_DEPTH_IMAGE = "/camera/aligned_depth_to_color/image_raw"
-    DATA_BASE_FOLDER = ROOT +'data/raw_rgbd_images/'
+    # -------------------- Setings --------------------
+    args = set_args()
+    SAVE_IMAGES_TO = ROOT +'data/raw_rgbd_images/'
 
-    sub_color = ColorImageSubscriber(TOPIC_COLOR_IMAGE)
-    sub_depth = DepthImageSubscriber(TOPIC_DEPTH_IMAGE)
-    rospy.sleep(1)
-
-    # Keys =========================================================
+    # Keys
     KEY_STOP_PROGRAM = 'q'
     KEY_START_RECORD = 's'
     KEY_STOP_RECORD = 'd'
     KEY_TAKE_ONE_PHOTE = 'f'
+    # --------------------------------------------------------
+    
+    # -- Init vars
+    sub_color = ColorImageSubscriber(args["topic_color_image"])
+    sub_depth = DepthImageSubscriber(args["topic_depth_image"])
+    rospy.sleep(1)
 
     # Start recording =========================================================
     print(node_name+": node starts!!!")
@@ -91,7 +94,7 @@ if __name__ == '__main__':
                     print("\n\n==========================")
                     print("Start recording\n")
                     is_recording = True
-                    tmp_folder = DATA_BASE_FOLDER + "/" + get_time() + "/"
+                    tmp_folder = SAVE_IMAGES_TO + "/" + get_time() + "/"
                     if not os.path.exists(tmp_folder):
                         os.mkdir(tmp_folder)
                     cnt_img_in_folder = 0
@@ -106,7 +109,7 @@ if __name__ == '__main__':
                 write_images_to_file(color, depth, tmp_folder, cnt_img_in_folder)
 
             if key == KEY_TAKE_ONE_PHOTE:
-                write_images_to_file(color, depth, DATA_BASE_FOLDER, get_time())
+                write_images_to_file(color, depth, SAVE_IMAGES_TO, get_time())
 
         rospy.sleep(0.01)
 

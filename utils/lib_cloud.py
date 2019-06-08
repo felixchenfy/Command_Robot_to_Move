@@ -135,9 +135,12 @@ def filtCloud(cloud, criteria):
 
 # Input folder name and index "ith_image", output color and depth image
 def read_color_and_depth_image(folder, ith_image,
-        output_img_format="open3d", index_len=5,
-        image_folder="image", image_name="image_",
-        depth_doler="depth", depth_name="depth_",
+        output_img_format="open3d", 
+        index_len=5,
+        image_folder="image", # folder/image/image_ith_image
+        image_name="image_",
+        depth_doler="depth", # folder/depth/depth_ith_image
+        depth_name="depth_",
     ):
     assert output_img_format in ["open3d", "cv2", "cv"]
     '''
