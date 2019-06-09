@@ -16,6 +16,8 @@ def set_args(filename="config.yaml"):
     args["topic_camera_info"] = "/camera/color/camera_info"
     args["filename_camera_info"] =  ROOT + "config/cam_params_realsense.json"
   
+    args["yolo_comm_txt"] = ROOT + "comm/yolo_comm.txt"
+    args["yolo_comm_img"] = ROOT + "comm/yolo_comm.png"
     return args
 
 def load_yaml(filename):

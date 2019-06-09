@@ -1,11 +1,25 @@
 
-*.pyc
-*.vscode
-**/.vscode
+
 *.docx 
 *.odt
 *.pdf 
 *.gv
+
+# vscode 
+*.vscode
+**/.vscode
+
+# python
+**/.ipynb_checkpoints/**
+**/__pycache__/**
+*.pyc
+
+# yolo
+*.jpg
+*.png 
+*.pth
+src/detection/yolo/data
+src/detection/yolo/weights
 
 doc/copied
 data/*
