@@ -1,4 +1,8 @@
-''' This script runs in a python3+ env with torch installed '''
+''' This script runs in a python3+ env with torch installed.
+A slave node will be started and waiting for the request from "yolo_request.py".
+The master/slave communicate through a file defined in "../../config/config.py".
+
+'''
 
 if 1: # Set path
     import sys, os
@@ -32,6 +36,11 @@ class CommSlave(YamlFile):
     def __init__(self, filename):
         super(CommSlave, self).__init__(filename)
         
+        # create the folder if not created
+        folder = os.path.dirname(filename)
+        if folder and (not os.path.exists(folder)):
+            os.makedirs(folder)
+            
     def wait_and_get_request(self, dt_check=0.05):
         while 1:
             time.sleep(dt_check)

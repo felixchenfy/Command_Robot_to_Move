@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ''' 
-Testing the Detector Class.
+Testing the PlaneDetector Class.
 This script runs in ROS.
 '''
 
@@ -46,7 +46,7 @@ if 1: # my lib
 def take_phote():
     pass 
 
-class Detector(object):
+class PlaneDetector(object):
     def __init__(self, IF_ROS=True):        
         self.args = set_args()
         
@@ -93,15 +93,7 @@ class Detector(object):
             rgbd_image, self.camera_intrinsics)
         return cloud 
     
-    def detect_plane(
-            self, 
-            cloud,
-
-            # Add color to the plane region. Plot plane center, 
-            # and plot an arrow for plane nomal
-            if_draw_plane=False,
-            img_disp=None, # img to draw on
-        ):
+    def detect_plane(self, cloud):
         ''' Use RANSAC to detect plane from point cloud. '''
         '''
         The cloud will be range-filtered by prior knowledge before RANSAC. 
@@ -117,8 +109,8 @@ class Detector(object):
             xyz,
             model, 
             n_pts_base=3,
-            n_pts_extra=20,
-            max_iter=20,
+            n_pts_extra=30,
+            max_iter=100,
             dist_thre=0.01,
             print_time=True,
             debug=False,
@@ -136,19 +128,27 @@ class Detector(object):
                 cloud_plane, voxel_size=0.02)
             plane_xyz, plane_color = getCloudContents(cloud_plane)
         
-        # Get plane parameters
-        p_cent = np.median(plane_xyz, axis=0) 
-        p_norm = coefs[1:]
-        if p_norm[2] > 0:
-            p_norm = -p_norm
+        # Get plane center
+        if 0: # use median
+            p_cent = np.median(plane_xyz, axis=0) 
+        else: # remove large and small points, and then take the average
+            p_cent = np.zeros((3, ))
+            P = plane_xyz.shape[0] # number of points
+            for i, dim_i in enumerate(plane_xyz.T):
+                dim_i = np.sort(dim_i)
+                n1 = int(round(P*0.3 - 0.5))
+                n2 = int(round(P*0.7 + 0.5))
+                p_cent[i] = np.mean(dim_i[n1:n2+1])
+                
+        # Get plane norm
+        v_norm = coefs[1:]
+        if v_norm[2] > 0:
+            v_norm = -v_norm
+        
+        return p_cent, v_norm, cloud_plane
             
-        # Draw
-        if if_draw_plane:
-            img_disp = self._draw_plane_onto_color_image(img_disp, cloud_plane)
-            img_disp = self._draw_plane_center_and_norm(img_disp, p_cent, p_norm)
-        return p_cent, p_norm, cloud_plane, img_disp
 
-    def _draw_plane_onto_color_image(
+    def draw_plane_onto_color_image(
             self, 
             img, 
             cloud_plane, # open3d cloud
@@ -171,26 +171,33 @@ class Detector(object):
         return img_disp
     
     
-    def _draw_plane_center_and_norm(self, img_disp, p_cent, p_norm):
+    def draw_plane_norm(
+            self, 
+            img_disp, 
+            p_on_plane, 
+            vec_norm,
+            color=[0,0,255], 
+            len_arrow = 0.3, # meter
+        ):
         
         # Check input
         intrinsic_matrix = self.intrinsic_matrix
         def to_int_tuple(arr):
             return (int(arr[0]), int(arr[1]))
+        
         # Draw plane center
         p0_xy = lib_geo_trans.cam2pixel(
-            p_cent.reshape((-1, 1)), intrinsic_matrix)
+            p_on_plane.reshape((-1, 1)), intrinsic_matrix)
         p0_xy = to_int_tuple(p0_xy)
-        cv2.circle(img_disp, p0_xy, radius=5, color=[0,0,255], 
+        cv2.circle(img_disp, p0_xy, radius=5, color=color, 
                 thickness=5, lineType=cv2.LINE_AA)
 
         # Draw plane norm
-        len_arrow = 0.3
-        p1 = p_cent + len_arrow * p_norm
+        p1 = p_on_plane + len_arrow * vec_norm
         p1_xy = lib_geo_trans.cam2pixel(
             p1.reshape((-1, 1)), intrinsic_matrix)
         p1_xy = to_int_tuple(p1_xy)
-        cv2.arrowedLine(img_disp, p0_xy, p1_xy, color=[0,0,255], 
+        cv2.arrowedLine(img_disp, p0_xy, p1_xy, color=color, 
                         thickness=5, tipLength=0.3)
         
         return img_disp
@@ -201,10 +208,10 @@ class Detector(object):
 #     @ staticmethod
 #     def compute_P2_point_in_front_of_plane(
 #             p_cent, 
-#             p_norm,
+#             v_norm,
 #             l_view=1.0, # the distance between robot and plane for taking a picture
 #         ):
-#         p_view = p_cent + l_view * p_norm
+#         p_view = p_cent + l_view * v_norm
         
 #         # transform p_view to the robot coordinate
 #         # TODO
@@ -213,17 +220,19 @@ class Detector(object):
     
 def main():
     
-    detector = Detector()
+    plane_detector = PlaneDetector()
     
     while not rospy.is_shutdown():
         
-        color_img, depth_img, cloud = detector.sub_rgbd_and_cloud()
-        p_cent, p_norm, cloud_plane, img_disp = detector.detect_plane(
-            cloud,
-            if_draw_plane=True,
-            img_disp=color_img.copy(),
-        )
+        color_img, depth_img, cloud = plane_detector.sub_rgbd_and_cloud()
+        img_disp = color_img.copy()
+        
+        # detect
+        p_cent, v_norm, cloud_plane = plane_detector.detect_plane(cloud)
 
+        # draw result
+        img_disp = plane_detector.draw_plane_onto_color_image(img_disp, cloud_plane)
+        img_disp = plane_detector.draw_plane_norm(img_disp, p_cent, v_norm)
         
         # display
         cv2.imshow("", img_disp)
@@ -232,7 +241,7 @@ def main():
             break 
         
         print("p_cent = {}".format(p_cent))    
-        print("p_norm = {}".format(p_norm))    
+        print("v_norm = {}".format(v_norm))    
         print("="*80)
         rospy.sleep(1.0)
     

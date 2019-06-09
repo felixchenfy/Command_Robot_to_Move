@@ -113,17 +113,20 @@ def rgbimgs_to_yoloimgs(imgs, img_size):
 
 # ------------------ Main functions used for inference ------------------
 
-def detetions_to_label_and_pos(detections, classes):
-    ''' detections: the output of "detect_targets()" '''
-    res = []
+def detetions_to_labels_and_pos(self, detections, classes):
+    ''' 
+    Input:
+        detections: the output of "detect_targets()" 
+    '''
+    labels_and_pos = []
     for x1, y1, x2, y2, conf, cls_conf, cls_pred in detections:
         label = classes[int(cls_pred)]
         pos = (int((x1+x2)/2), int((y1+y2)/2))
-        res.append((label, pos))
+        labels_and_pos.append((label, pos))
     if 0: # test result
-        for label, pos in res:
+        for label, pos in labels_and_pos:
             print("Detect '{}', pos = {}".format(label, pos))
-    return res 
+    return labels_and_pos 
 
 def create_model(args):
     # Set up model

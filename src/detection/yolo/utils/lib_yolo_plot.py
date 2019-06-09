@@ -138,7 +138,7 @@ class Yolo_Detection_Plotter_by_cv2(object):
     def __init__(self, IF_SHOW=True, 
                  cv2_waitKey_time=1, # (ms) 
                  window_name="Yolo detection results",
-                 resize_scale=1.5, # resize image larger
+                 resize_scale=1, # resize image larger
                  ):
         self.cmap = plt.get_cmap("tab20")
         self.colors = [self.cmap(i) for i in np.linspace(0, 1, 20)]
@@ -167,8 +167,9 @@ class Yolo_Detection_Plotter_by_cv2(object):
             
         self._plot_onto_image(self.img_disp, detections, classes, if_plot_center, if_print)
         
-        self.img_disp = cv2.resize( # make the drawing larger
-            self.img_disp, dsize=(0, 0), fx=self.resize_scale, fy=self.resize_scale) 
+        if self.resize_scale != 1:
+            self.img_disp = cv2.resize( # make the drawing larger
+                self.img_disp, dsize=(0, 0), fx=self.resize_scale, fy=self.resize_scale) 
         
         if self.IF_SHOW: 
             cv2.imshow(self.window_name, self.img_disp)
@@ -219,7 +220,7 @@ class Yolo_Detection_Plotter_by_cv2(object):
                     thickness=1, 
                     font=cv2.FONT_HERSHEY_PLAIN)
                 if if_print: 
-                    print("box: center=({xc}, {yc}), w={width}, h={height}"%(xc, yc, width, height))
+                    print("box: center=({0}, {1}), w={2}, h={3}".format(xc, yc, width, height))
             # end of "if detections is not None:"
         
 

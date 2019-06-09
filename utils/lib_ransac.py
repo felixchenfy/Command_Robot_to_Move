@@ -40,7 +40,6 @@ def ransac(
     print("Input: num points = {}, features dim = {}".format(P, N))
     print("Config: n_pts_base = {}, n_pts_extra = {}, dist_thre = {}".format(
         n_pts_base, n_pts_extra, dist_thre))
-    print("")
 
     # Vars to record
     t0 = time.time()
@@ -120,7 +119,7 @@ def ransac(
 
     # Print time
     if print_time:
-        print("\nTime cost for RANSAC = {:.3f} seconds".format(
+        print("Time cost for RANSAC = {:.3f} seconds".format(
             time.time() - t0))
     print("--------------------------------\n")
 
