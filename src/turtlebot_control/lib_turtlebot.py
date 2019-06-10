@@ -27,10 +27,43 @@ if 1: # my lib
     import os
     ROOT = os.path.dirname(os.path.abspath(__file__))+"/../../"
     sys.path.append(ROOT)
-    from lib_turtlebot import Turtle 
     from utils.lib_geo_trans_ros import *
+    
+IN_SIMULATION = True
+
+# ==================================================================================================
+# Math
+def xytheta_to_T(x, y, theta): # T: 3x3 transformation matrix
+    c = np.cos(theta)
+    s = np.sin(theta)
+    T = np.array([
+        [c, -s, x,],
+        [s,  c, y,],
+        [0,  0, 1,],
+    ])
+    return T 
+
+def T_to_xytheta(T): # T: 3x3 transformation matrix
+    assert T.shape == (3, 3)
+    x = T[0, 2]
+    y = T[1, 2]
+    s, c = T[1, 0], T[0, 0]
+    theta = np.arctan2(s, c)
+    return x, y, theta 
+    
 # ==================================================================================================
 
+def call_service(service_name, service_type, args=None):
+    rospy.wait_for_service(service_name)
+    try:
+        func = rospy.ServiceProxy(service_name, service_type)
+        func(*args) if args else func()  # call this service
+    except rospy.ServiceException as e:
+        print("Failed to call service:", service_name)
+        sys.exit()
+
+# ==================================================================================================
+# Control algorithms
 
 class PIDcontroller(object):
     T = 1
@@ -72,18 +105,23 @@ def control_wheeled_robot_to_pose(
     # Robot config
     MAX_V = 0.1
     MAX_W = 0.6
+    MIN_V = 0.0 # should be 0
+    MIN_W = 0.0 # should be 0
 
     # Set control parameters
     T = 0.05  # control period
     PIDcontroller.set_control_period(T)
- 
-    k_rho = 0.3 # reduce distance to the goal. P > 0
-    k_alpha = 1.0 # drive robot towards the goal. P > P_rho
+    exp_ratio = 1.0 # exp ratio applied to PID's output. should be 1
+    k_vals = [0.3, 1.0, -0.5]
+    # k_vals = [0.5, 1.2, -0.6]
+    
+    k_rho = k_vals[0] # reduce distance to the goal. P > 0
+    k_alpha = k_vals[1] # drive robot towards the goal. P > P_rho
     if theta_goal is None: 
         theta_goal = 0
         k_beta = 0 # not considering orientation
     else:
-        k_beta = -0.5 # make robot same orientation as desired. P < 0
+        k_beta = k_vals[2] # make robot same orientation as desired. P < 0
                 # 100% is too large
                     
     # Init PID controllers
@@ -92,15 +130,16 @@ def control_wheeled_robot_to_pose(
     pid_beta = PIDcontroller(P=k_beta, I=0)
 
     # Loop and control
+    cnt_steps = 0
     while not rospy.is_shutdown():
-
+        cnt_steps += 1
+        
         x, y, theta = turtle.get_pose()
 
         rho = calc_dist(x, y, x_goal, y_goal)
         alpha = pi2pi(math.atan2(y_goal - y, x_goal - x) - theta)
         beta = - theta - alpha + theta_goal
 
-        print("rho = {}, alpha = {}, beta = {}".format(rho, alpha, beta))
 
         # check direction
         sign = 1
@@ -115,48 +154,36 @@ def control_wheeled_robot_to_pose(
         val_beta = pid_beta.compute(err=beta)[0]
 
         # Get v and w 
-        v = sign * val_rho
-        w = sign * (val_alpha + val_beta)
+        v = sign * val_rho**exp_ratio
+        w = sign * (val_alpha + val_beta)**exp_ratio
 
         # Threshold on velocity
-        v = min(abs(v), MAX_V) * (1 if v > 0 else -1)  # limit v
-        w = min(abs(w), MAX_W) * (1 if w > 0 else -1) # limit w
+        v = max(MIN_V, min(abs(v), MAX_V)) * (1 if v > 0 else -1)  # limit v
+        w = max(MIN_W, min(abs(w), MAX_W)) * (1 if w > 0 else -1) # limit w
         
         # Output
         turtle.set_twist(v, w)
-        turtle.print_state(x, y, theta, v, w)
+        if cnt_steps % 10 == 0:
+            turtle.print_state(x, y, theta, v, w)
+            print("\trho = {}, alpha = {}, beta = {}".format(rho, alpha, beta))
 
         rospy.sleep(T)
 
         # Check stop condition
-        if abs(x-x_goal)<0.008 and abs(y-y_goal)<0.008 and abs(theta-theta_goal)<0.1:
+        if abs(x-x_goal)<0.01 and abs(y-y_goal)<0.01 and abs(theta-theta_goal)<0.1:
             break
 
     turtle.set_twist(v=0, w=0)
     print("Reach the target. Control completes.\n")
 
 
-def call_service(service_name, service_type, args=None):
-    rospy.wait_for_service(service_name)
-    try:
-        func = rospy.ServiceProxy(service_name, service_type)
-        func(*args) if args else func()  # call this service
-    except rospy.ServiceException as e:
-        print("Failed to call service:", service_name)
-        sys.exit()
-
-
-
-
-
-IN_SIMULATION = False
-
-
+# ==================================================================================================
+# Turtlebot class for other ROS node
 class Turtle(object):
     def __init__(self):
 
         # Names
-        self.model_name = "turtlebot3_waffle"
+        self.model_name = "turtlebot3_waffle_pi"
         self.reference_frame = "world"
 
         # Pub
@@ -227,7 +254,7 @@ class Turtle(object):
         )
 
         ''' Anathor way is to directly type following code in command line:
-        rostopic pub -r 20 /gazebo/set_model_state gazebo_msgs/ModelState '{model_name: turtlebot3_waffle, pose: { position: { x: 1, y: 0, z: 2 }, orientation: {x: 0, y: 0.491983115673, z: 0, w: 0.870604813099 } }, twist: { linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0}  }, reference_frame: world }'
+        rostopic pub -r 20 /gazebo/set_model_state gazebo_msgs/ModelState '{model_name: turtlebot3_waffle_pi, pose: { position: { x: 1, y: 0, z: 2 }, orientation: {x: 0, y: 0.491983115673, z: 0, w: 0.870604813099 } }, twist: { linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0}  }, reference_frame: world }'
         '''
 
     def reset_time(self):
@@ -261,6 +288,7 @@ class Turtle(object):
             self.set_twist(v=0.1, w=0.1)
             print("Moving in circle ...")
             rospy.sleep(0.5)
+        return True
 
     def move_a_line(self):
         while not rospy.is_shutdown():
@@ -268,13 +296,38 @@ class Turtle(object):
             x, y, theta = self.get_pose()
             self.print_state(x, y, theta)
             rospy.sleep(0.1)
+        return True
 
-    def move_to_pose(self, x_goal, y_goal, theta_goal):
+    def move_to_pose(self, x_goal, y_goal, theta_goal=None):
+        
+        print("\nMove robot to the global pose: {}, {}, {}\n".format(
+            x_goal, y_goal, theta_goal,))
+  
+        control_wheeled_robot_to_pose(
+            self, x_goal, y_goal, theta_goal)
+        
+        return True
+    
+    def move_to_relative_pose(self, x_goal_r, y_goal_r, theta_goal_r):
 
-        if 1:  # move to pose
-            lib_controllers.control_wheeled_robot_to_pose(
-                self, x_goal, y_goal, theta_goal)
+        # convert x_goal from robot coordinate to the world coordinate
+        x0, y0, theta0 = self.get_pose()
+        Twr = xytheta_to_T(x0, y0, theta0) # T_world_to_robot
+        Trg = xytheta_to_T(x_goal_r, y_goal_r, theta_goal_r) # T_robot_to_goal
+        Twg = np.dot(Twr, Trg)       
+        x_goal_w, y_goal_w, theta_goal_w = T_to_xytheta(Twg)
 
-        elif 0:  # move to point
-            lib_controllers.control_wheeled_robot_to_pose(
-                self, x_goal, y_goal)
+        # print("\nTwr: {}\nTwr: {}\nTwr: {}".format(Twr, Trg, Twg))     
+        
+        # move
+        self.move_to_pose(x_goal_w, y_goal_w, theta_goal_w)
+        
+        return True
+    
+        # xg = x0 + distance * np.cos(theta0)
+        # yg = x0 + distance * np.cos(theta0)
+        
+    # def move_forward(self, distance):
+    #     x0, y0, theta0 = self.get_pose()
+    #     xg = x0 + distance * np.cos(theta0)
+    #     yg = x0 + distance * np.cos(theta0)
