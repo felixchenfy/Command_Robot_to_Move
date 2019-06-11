@@ -18,6 +18,9 @@ def set_args(filename="config.yaml"):
   
     args["yolo_comm_txt"] = ROOT + "comm/yolo_comm.txt"
     args["yolo_comm_img"] = ROOT + "comm/yolo_comm.png"
+
+    args["voice_comm_txt"] = ROOT + "comm/voice_comm.txt"
+
     return args
 
 def load_yaml(filename):
