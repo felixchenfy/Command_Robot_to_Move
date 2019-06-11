@@ -93,7 +93,7 @@ class Yolo_Detection_Plotter_by_very_slow_plt(object):
         ax.imshow(img)
 
         # Draw bounding boxes and labels of detections
-        if detections is not None:
+        if (detections is not None) and (len(detections) > 0):
             # unique_labels = detections[:, -1].cpu().unique() # tensor version
             unique_labels = np.unique(detections[:, -1]) # numpy version
             n_cls_preds = len(unique_labels)
@@ -183,7 +183,7 @@ class Yolo_Detection_Plotter_by_cv2(object):
         colors = self.colors
 
         # Draw bounding boxes and labels of detections
-        if detections is not None:
+        if (detections is not None) and (len(detections) > 0):
             # unique_labels = detections[:, -1].cpu().unique() # tensor version
             unique_labels = np.unique(detections[:, -1]) # numpy version
             n_cls_preds = len(unique_labels)

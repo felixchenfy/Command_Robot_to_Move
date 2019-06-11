@@ -79,7 +79,10 @@ class TrueYoloDetector(object):
             detections = self.detector.detect(img)
             
             # write to data
-            detections = detections.tolist() 
+            if detections is None:
+                detections = []
+            else:
+                detections = detections.tolist() 
             data["detections"] = detections
             
             # response

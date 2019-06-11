@@ -93,14 +93,17 @@ class PlaneDetector(object):
             rgbd_image, self.camera_intrinsics)
         return cloud 
     
-    def detect_plane(self, cloud):
+    def detect_plane(self, cloud, min_points=10):
         ''' Use RANSAC to detect plane from point cloud. '''
         '''
         The cloud will be range-filtered by prior knowledge before RANSAC. 
         This function can be tested in the notebook "test_detect_plane.ipynb".
         '''
-        
-        cloud = filtCloudByRange(cloud, zmax=1.0, ymax=0.1)
+                
+        # filter input cloud
+        cloud = filtCloudByRange(cloud, zmax=1.5, ymax=0.02)
+        if len(cloud.points)<min_points:
+            return None, None, None 
         
         # Use RANSAC to detect plane
         xyz, color = getCloudContents(cloud) # color: rgb
@@ -117,10 +120,12 @@ class PlaneDetector(object):
         )
         print("source points = {}, inliers points = {}".format(
             xyz.shape[0], inliers.size ))
-
+        
         # Get inliers points
         plane_xyz, plane_color = xyz[inliers, :], color[inliers, :]
         cloud_plane = formNewCloud(plane_xyz, plane_color)
+        if len(cloud_plane.points)<min_points:
+            return None, None, None 
         
         # Downsample
         if 1:

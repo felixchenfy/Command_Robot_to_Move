@@ -99,7 +99,7 @@ class FakeYoloDetector(object):
             
         # wait and get result
         data = master.wait_and_get_response(dt_check=0.05)
-        detections = np.array( data["detections"])
+        detections = np.array(data["detections"])
         if if_print:
             print("Master receives the response:")
             print("\t", detections)

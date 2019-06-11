@@ -136,7 +136,7 @@ def project_points_to_image_mask(xyz, open3d_camera_intrinsic, scale=5.0):
     vu_s /= scale
     vu_s = np.round(vu_s).astype(np.int)
     w_idx = np.logical_and(ws > vu_s[0], vu_s[0] >= 0)
-    h_idx = np.logical_and(hs > vu_s[0], vu_s[1] >= 0)
+    h_idx = np.logical_and(hs > vu_s[1], vu_s[1] >= 0)
     vu_s = vu_s[:, np.logical_and(w_idx, h_idx)]
 
     # put points onto mask

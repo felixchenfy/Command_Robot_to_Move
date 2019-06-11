@@ -59,7 +59,7 @@ def set_arguments():
             args.batch_size = 1
             args.n_cpu = 8
             args.data_source = "folder"
-            args.image_data_path = 'data/digits_eval2/'
+            args.image_data_path = 'data/digits_eval4/'
         
     return args 
 
