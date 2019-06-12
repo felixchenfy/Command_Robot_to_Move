@@ -8,6 +8,11 @@ from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from tf.transformations import euler_matrix, euler_from_matrix, quaternion_from_matrix, quaternion_matrix
 from geometry_msgs.msg import Pose, Point, Quaternion
 
+def form_T(R, p):
+    T = np.identity(4)
+    T[0:3, 0:3] = R
+    T[0:3, 3:4] = np.array(p).reshape((3, 1))
+    return T
 
 if 0: # Functions below has already been defined in lib_geo_trans
     def rotx(angle, matrix_len=4):

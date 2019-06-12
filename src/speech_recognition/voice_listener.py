@@ -2,9 +2,9 @@
 
 if 1: # Set path
     import sys, os
-    ROS_ROOT = os.path.dirname(os.path.abspath(__file__))+"/../../config/" # ROS config folder
+    ROS_ROOT = os.path.dirname(os.path.abspath(__file__))+"/../../" # ROS config folder
     sys.path.append(ROS_ROOT)
-    from config import set_args
+    from config.config import set_args
     
 import time 
 import yaml
@@ -29,27 +29,33 @@ class VoiceListener(object):
         }
         self._write_yaml(data)
         
-    def wait_next_command(self, dt_check=0.05):
+    def wait_next_command(self, dt_check=0.05, wait_time=1.0):
         
         # wait for new command
-        while 1:
+        N = int(wait_time / dt_check)
+        flag = False
+        for i in range(N):
             time.sleep(dt_check)
             data  = self._read_yaml() # TODO
             try:
                 if data["new_command_updated"]:
+                    flag = True
                     break
             except:
                 Warning("Voice listener reads an empty yaml file: ", data)
                 continue 
-        
-        # update listener state
-        data["new_command_updated"] = 0
-        self._write_yaml(data)
-        
-        # return command label
-        command_label = data["command_label"]
-        return command_label 
-                 
+            
+        if flag: # no command is received
+            # update listener state
+            data["new_command_updated"] = 0
+            self._write_yaml(data)
+            
+            # return command label
+            command_label = data["command_label"]
+            return command_label 
+        else:
+            return None 
+                         
     def _read_yaml(self):
         with open(self.filename, 'r') as f:
             data = yaml.safe_load(f)
@@ -63,8 +69,10 @@ class VoiceListener(object):
 if __name__ == "__main__":
     voice_listerner = VoiceListener()
     while 1:
-        print("\n")
-        print("Start listening to command")    
-        command_label = voice_listerner.wait_next_command()
-        print("Receive a command: {}".format(command_label))
-        
+        print("\nStart listening to command")    
+        command_label = voice_listerner.wait_next_command(wait_time=1.0)
+        if command_label is None:
+            print("Receive no command.")
+        else:
+            print("Receive a command: {}".format(command_label))
+        time.sleep(1.0)

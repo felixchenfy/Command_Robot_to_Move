@@ -42,6 +42,8 @@ class ImageSubscriber(object):
 
 
     def _get_image(self):
+        while self.is_image_updated == False:
+            time.sleep(0.001)
         self.is_image_updated=False
         return self.rosImage, self.t
 

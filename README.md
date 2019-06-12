@@ -57,11 +57,15 @@ Then, from Yolo's result, we can locate the target's position and orientation.
 2. Update this README.   
     (Complete by June 18)
 
-# 4. main commands
+# 4. Main commands
+
+see [doc/main_commands.md](doc/main_commands.md)
+
+# 5. Other commands for testing
 
 * Test robot controller in simulation
 
-    In [lib_turtlebot.py](src/turtlebot_control/lib_turtlebot.py), set **IN_SIMULATION** to True to test the robot in simulation.  
+    In [lib_turtlebot.py](src/turtlebot_control/lib_turtlebot.py), set **IF_IN_SIMULATION** to True to test the robot in simulation.  
     In [move_turtle_to_pose.py](src/turtlebot_control/move_turtle_to_pose.py), in the **def main(** function, select a test case to test.
 
     Then:  

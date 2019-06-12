@@ -91,5 +91,6 @@ class TrueYoloDetector(object):
 
 if __name__ == "__main__":
     true_yolo_detector = TrueYoloDetector()
+    print("Start yolo detector: ")
     true_yolo_detector.start()
     

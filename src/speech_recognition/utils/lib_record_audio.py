@@ -150,7 +150,7 @@ class AudioRecorder(object):
 
 
     def delete_file(self, filename):
-        subprocess.check_call("rm " + filename, shell=True)
+        subprocess.check_call("rm " + filename, shell=False)
 
     def int_or_str(self, text):
         """Helper function for argument parsing."""

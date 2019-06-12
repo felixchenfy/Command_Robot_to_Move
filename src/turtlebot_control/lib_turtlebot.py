@@ -29,7 +29,7 @@ if 1: # my lib
     sys.path.append(ROOT)
     from utils.lib_geo_trans_ros import *
     
-IN_SIMULATION = True
+IF_IN_SIMULATION = False
 
 # ==================================================================================================
 # Math
@@ -191,7 +191,7 @@ class Turtle(object):
             "/cmd_vel", Twist, queue_size=10)
         
         # sub
-        if IN_SIMULATION:
+        if IF_IN_SIMULATION:
             self.sub_pose = rospy.Subscriber(
                 "/gazebo/model_states", ModelStates, self.callback_sub_pose_simulation)
         else:
@@ -204,38 +204,42 @@ class Turtle(object):
         self.twist = Twist()
         
         # Others
-        Turtle.IN_SIMULATION = IN_SIMULATION
-        
-    def reset_global_pose(self):
+        Turtle.IF_IN_SIMULATION = IF_IN_SIMULATION
+    
+    def reset_pose(self):
+    
+        # reset turtle's pose    
+        rospy.sleep(0.2)
+        if self.IF_IN_SIMULATION:
+            self._reset_pose_if_in_sim()
+        else:
+            self._reset_pose_if_not_in_sim()
+        rospy.sleep(0.2)
+            
+    def _reset_pose_if_not_in_sim(self):
         # set up the odometry reset publisher
         reset_odom = rospy.Publisher('/reset', Empty, queue_size=10)
         # reset odometry (these messages take a few iterations to get through)
         rospy.loginfo("Resetting robot state...")
-        rospy.sleep(1.0)
+        rospy.sleep(0.3)
         reset_odom.publish(Empty())
-        rospy.sleep(1.0)
+        rospy.sleep(0.5)
+        
+        # t0 = rospy.get_time()
+        # while not rospy.is_shutdown():
+        #     x, y, theta = self.get_pose()
+        #     if np.linalg.norm([x, y, theta])<0.01:
+        #         break
+        #     rospy.sleep(0.2)
+        #     reset_odom.publish(Empty())
+        #     if rospy.get_time() - t0 > 3:
+        #         print("Error reseting robot state:")
+        #         self.print_state(x, y, theta, 0, 0)
+        # rospy.sleep(0.2)
+        
         rospy.loginfo("Resetting robot state... Complete")
         
-    def set_twist(self, v, w):
-        twist = Twist()
-        twist.linear.x = v
-        if IN_SIMULATION:
-            twist.angular.z = -w
-        else:
-            twist.angular.z = w
-        self.pub_twist.publish(twist)
-
-    def get_pose(self):
-        x, y, theta = pose_to_xytheta(self.pose)
-        return x, y, theta
-        # return x - self.x0, y - self.y0, theta - self.theta0
-
-    # def reset_pose_offset(self):
-    #     self.x0, self.y0, self.theta0 = pose_to_xytheta(self.pose)
-    #     rospy.loginfo("Set pose offset: x0 = {}, y0 = {}, theta0 = {}".format(
-    #         self.x0, self.y0, self.theta0))
-
-    def set_pose_in_simulation(self, x=0, y=0, z=0):
+    def _reset_pose_if_in_sim(self, x=0, y=0, z=0):
 
         # Set robot state
         p = Point(x=x, y=y, z=z)
@@ -256,6 +260,25 @@ class Turtle(object):
         ''' Anathor way is to directly type following code in command line:
         rostopic pub -r 20 /gazebo/set_model_state gazebo_msgs/ModelState '{model_name: turtlebot3_waffle_pi, pose: { position: { x: 1, y: 0, z: 2 }, orientation: {x: 0, y: 0.491983115673, z: 0, w: 0.870604813099 } }, twist: { linear: { x: 0, y: 0, z: 0 }, angular: { x: 0, y: 0, z: 0}  }, reference_frame: world }'
         '''
+
+    def set_twist(self, v, w):
+        twist = Twist()
+        twist.linear.x = v
+        if IF_IN_SIMULATION:
+            twist.angular.z = -w
+        else:
+            twist.angular.z = w
+        self.pub_twist.publish(twist)
+
+    def get_pose(self):
+        x, y, theta = pose_to_xytheta(self.pose)
+        return x, y, theta
+        # return x - self.x0, y - self.y0, theta - self.theta0
+
+    # def reset_pose_offset(self):
+    #     self.x0, self.y0, self.theta0 = pose_to_xytheta(self.pose)
+    #     rospy.loginfo("Set pose offset: x0 = {}, y0 = {}, theta0 = {}".format(
+    #         self.x0, self.y0, self.theta0))
 
     def reset_time(self):
         self.time0 = rospy.get_time()
@@ -291,10 +314,12 @@ class Turtle(object):
         return True
 
     def move_a_line(self):
+        v=0.1
+        w=0
         while not rospy.is_shutdown():
-            self.set_twist(v=0.1, w=0)
+            self.set_twist(v=v, w=w)
             x, y, theta = self.get_pose()
-            self.print_state(x, y, theta)
+            self.print_state(x, y, theta, v, w)
             rospy.sleep(0.1)
         return True
 

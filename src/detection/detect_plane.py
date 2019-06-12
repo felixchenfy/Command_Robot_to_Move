@@ -101,7 +101,7 @@ class PlaneDetector(object):
         '''
                 
         # filter input cloud
-        cloud = filtCloudByRange(cloud, zmax=1.5, ymax=0.02)
+        cloud = filtCloudByRange(cloud, zmax=1.5, ymax=0.03)
         if len(cloud.points)<min_points:
             return None, None, None 
         

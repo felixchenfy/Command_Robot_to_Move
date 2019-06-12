@@ -55,8 +55,8 @@ def main(args, turtle):
     
     # test_simple_move(args, turtle)
     # test_PID_controller(args, turtle)
-    test_complex_move(args, turtle)
-    # test_forward_and_backward(args, turtle)
+    # test_complex_move(args, turtle)
+    test_forward_and_backward(args, turtle)
     
     return 
 
@@ -73,15 +73,8 @@ if __name__ == '__main__':
 
     # init variables
     turtle = Turtle()
+    turtle.reset_pose()
     
-    # reset turtle's pose    
-    rospy.sleep(0.2)
-    if turtle.IN_SIMULATION:
-        turtle.set_pose_in_simulation()
-    else:
-        turtle.reset_global_pose()
-    rospy.sleep(0.2)
-        
     # main
     main(args, turtle)
     rospy.spin()

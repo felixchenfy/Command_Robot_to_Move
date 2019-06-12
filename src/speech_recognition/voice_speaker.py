@@ -1,8 +1,8 @@
 if 1: # Set path
     import sys, os
-    ROS_ROOT = os.path.dirname(os.path.abspath(__file__))+"/../../config/" # ROS config folder
+    ROS_ROOT = os.path.dirname(os.path.abspath(__file__))+"/../../" # ROS config folder
     sys.path.append(ROS_ROOT)
-    from config import set_args
+    from config.config import set_args
     
 ROOT = os.path.dirname(os.path.abspath(__file__))
 import numpy as np 
@@ -146,5 +146,6 @@ if __name__=="__main__":
     
     comm_args = set_args()
     file_writer = YamlFileWriter(filename=comm_args["voice_comm_txt"])
+    print("Start voice speaker: ")
     inference_from_microphone(file_writer)
         
