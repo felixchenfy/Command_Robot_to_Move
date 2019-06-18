@@ -31,10 +31,10 @@ Content of the video demo:
 
 
 **Hardware:**  
-* Turtlebot3-Waffle-Pi (a 2-wheel robot)  
-* RGBD camera (Intel Realsense)
-* A white board with numbers on it, including ①, ②, ③, ④, ⑤.
-* My laptop as the main processor.
+* Turtlebot3-Waffle-Pi (a 2-wheel robot).  
+* RGBD camera (Intel Realsense).  
+* A white board with numbers on it, including ①, ②, ③, ④, ⑤.  
+* My laptop as the main processor.  
 
 **Procedures and goals:** 
 1. I put the Turtlebot robot on the ground.
@@ -44,9 +44,9 @@ Content of the video demo:
 5. The robot moves to the white board and hits the target.
 
 **Key techniques:**    
-* Speech recognition (classification).
-* Object detection to find targets.
-* Point cloud processing for locating the target's orientation.
+* Speech commands recognition (classification) by LSTM.
+* Object detection by Yolo.
+* Point cloud processing: detect white board by RANSAC and get its orientation.
 * Use control algorithm to move robot to the desired pose.
 
 **Environments:**
