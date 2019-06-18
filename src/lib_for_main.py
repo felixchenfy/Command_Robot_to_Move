@@ -56,7 +56,7 @@ class CoodRelations(object):
     @staticmethod
     def turtlebot_to_camera():
         x_dis = 0.082 # 0.055 ~ 0.1. TODO: Determine this value
-        y_dis = 0 # camera is placed right in front of the turtlebot
+        y_dis = 0 # camera is placed right in front of the Turtlebot
         z_dis = 0.01 # 0.01 ~ 0.02. This value doesn't matter at all. In my case, I don't care the height
         pos = [x_dis, y_dis, z_dis]
         R = np.identity(3)

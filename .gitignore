@@ -4,6 +4,7 @@
 *.odt
 *.pdf 
 *.gv
+*.wav
 
 # vscode 
 *.vscode
