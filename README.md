@@ -1,6 +1,11 @@
 
 # Simon Says
-Goal: I say a target object, then the robot detects it and moves there.
+## Goal: I say a target object, then the robot detects it and moves there.
+
+This is my spring project at Northwestern University, the MS Robotics program.  
+Time: 2019/04-06.
+
+
 
 --------------------
 
@@ -23,9 +28,6 @@ Content of the video demo:
 ```
 
 # 1. Intro to the project
-
-This is my spring project at Northwestern University, MS Robotics program.  
-Time: 2019/04-06.
 
 
 **Hardware:**  
